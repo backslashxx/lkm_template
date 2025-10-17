@@ -31,20 +31,30 @@
 #define UNLOAD 0
 #define PRINT_ARG 1
 
+struct basic_payload {
+	unsigned long reply_ptr;
+	char text[256];
+};
+
 HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user *arg)
 {
 	if (magic1 != DEF_MAGIC)
 		return 0;
 
+	int ok = DEF_MAGIC; // we just write magic on reply
+
 	pr_info("LKM: intercepted call! magic: 0x%d id: 0x%d\n", magic1, magic2);
 
 	if (magic2 == PRINT_ARG) {
-		char buf[256] = {0};
-		if (copy_from_user(buf, arg, 256))
+		struct basic_payload basic = {0};
+		if (copy_from_user(&basic, arg, sizeof(struct basic_payload)))
 			return 0;
 
-		buf[255] = '\0';
-		pr_info("LKM: print %s\n", buf);
+		basic.text[255] = '\0';
+		pr_info("LKM: print %s\n", basic.text);
+
+		if (copy_to_user((void __user *)basic.reply_ptr, &ok, sizeof(ok)))
+			return 0;
 	}
 
 	return 0;
