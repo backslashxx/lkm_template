@@ -34,7 +34,9 @@
 // always use u64 for pointers regardless, this way we wont have any
 // issues like that nasty 32-on-64 pointer mismatch.
 
-
+// for manual hook, make sure to pass arg address
+// template_handle_sys_reboot(magic1, magic2, cmd, &arg);
+// ^ like that
 HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
 {
 	int ok = DEF_MAGIC; // we just write magic on reply
