@@ -33,10 +33,7 @@
 
 // always use u64 for pointers regardless, this way we wont have any
 // issues like that nasty 32-on-64 pointer mismatch.
-struct basic_payload {
-	uint64_t reply_ptr;
-	char text[256];
-};
+
 
 HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
 {
@@ -48,14 +45,12 @@ HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd
 	pr_info("LKM: intercepted call! magic: 0x%x id: %d\n", magic1, magic2);
 
 	if (magic2 == PRINT_ARG) {
-		struct basic_payload basic = {0};
-		
-		// always dereference when using since **arg is &arg
-		if (copy_from_user(&basic, *arg, sizeof basic))
+		char buf[256] = {0};
+		if (copy_from_user(&buf, *arg, 256))
 			return 0;
 
-		basic.text[255] = '\0';
-		pr_info("LKM: print %s\n", basic.text);
+		buf[255] = '\0';
+		pr_info("LKM: print %s\n", buf);
 
 		if (copy_to_user((void __user *)*arg, &ok, sizeof(ok)))
 			return 0;
