@@ -29,10 +29,12 @@ int main(int argc, char *argv[]) {
 	strncpy(payload.text, arg, sizeof(payload.text) - 1);
 	payload.text[sizeof(payload.text) - 1] = '\0';
 
-	printf("SYS_reboot(%lu, %lu, 0, %p)\n", magic1, magic2, &payload);
-	syscall(SYS_reboot, magic1, magic2, 0, &payload);
-	
-	printf("reply: 0x%lx\n", reply_value);
+	printf("SYS_reboot(%lu, %lu, 0, %p)\n", magic1, magic2, (void *)&payload);
+	syscall(SYS_reboot, magic1, magic2, 0, (void *)&payload);
+
+	// pointer reuse here
+	// force cast to uint to satisfy -Wpedantic
+	printf("reply: 0x%x\n", *(unsigned int *)&payload);
 	
 	return 0;
 
