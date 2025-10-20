@@ -31,8 +31,10 @@
 #define UNLOAD 0
 #define PRINT_ARG 1
 
+// always use u64 for pointers regardless, this way we wont have any
+// issues like that nasty 32-on-64 pointer mismatch.
 struct basic_payload {
-	unsigned long reply_ptr;
+	uint64_t reply_ptr;
 	char text[256];
 };
 

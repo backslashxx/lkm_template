@@ -3,9 +3,12 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <stdint.h>
 
+// always use u64 for pointers regardless, this way we wont have any
+// issues like that nasty 32-on-64 pointer mismatch.
 struct basic_payload {
-	unsigned long reply_ptr;
+	uint64_t reply_ptr;
 	char text[256];
 };
 
@@ -22,7 +25,7 @@ int main(int argc, char *argv[]) {
 	unsigned long reply_value = 0; // we get reply on this
 
 	struct basic_payload payload;
-	payload.reply_ptr = (unsigned long)&reply_value;
+	payload.reply_ptr = (uint64_t)&reply_value;
 	strncpy(payload.text, arg, sizeof(payload.text) - 1);
 	payload.text[sizeof(payload.text) - 1] = '\0';
 
