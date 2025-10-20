@@ -38,7 +38,7 @@ struct basic_payload {
 	char text[256];
 };
 
-HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user *arg)
+HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
 {
 	int ok = DEF_MAGIC; // we just write magic on reply
 
@@ -49,13 +49,15 @@ HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd
 
 	if (magic2 == PRINT_ARG) {
 		struct basic_payload basic = {0};
-		if (copy_from_user(&basic, arg, sizeof basic))
+		
+		// always dereference when using since **arg is &arg
+		if (copy_from_user(&basic, *arg, sizeof basic))
 			return 0;
 
 		basic.text[255] = '\0';
 		pr_info("LKM: print %s\n", basic.text);
 
-		if (copy_to_user((void __user *)basic.reply_ptr, &ok, sizeof(ok)))
+		if (copy_to_user((void __user *)*arg, &ok, sizeof(ok)))
 			return 0;
 	}
 
@@ -69,7 +71,7 @@ static int sys_reboot_handler_pre(struct kprobe *p, struct pt_regs *regs)
 	int magic1 = (int)PT_REGS_PARM1(real_regs);
 	int magic2 = (int)PT_REGS_PARM2(real_regs);
 	int cmd = (int)PT_REGS_PARM3(real_regs);
-	void __user *arg = (void __user *)PT_REGS_SYSCALL_PARM4(real_regs);
+	void __user **arg = (void __user **)&PT_REGS_SYSCALL_PARM4(real_regs);
 
 	return template_handle_sys_reboot(magic1, magic2, cmd, arg);
 }
