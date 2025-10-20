@@ -40,16 +40,16 @@ struct basic_payload {
 
 HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user *arg)
 {
-	if (magic1 != DEF_MAGIC)
-		return 0;
-
 	int ok = DEF_MAGIC; // we just write magic on reply
 
-	pr_info("LKM: intercepted call! magic: 0x%d id: 0x%d\n", magic1, magic2);
+	if (magic1 != ok)
+		return 0;
+
+	pr_info("LKM: intercepted call! magic: 0x%x id: %d\n", magic1, magic2);
 
 	if (magic2 == PRINT_ARG) {
 		struct basic_payload basic = {0};
-		if (copy_from_user(&basic, arg, sizeof(struct basic_payload)))
+		if (copy_from_user(&basic, arg, sizeof basic))
 			return 0;
 
 		basic.text[255] = '\0';
@@ -82,11 +82,12 @@ static struct kprobe sys_reboot_kp = {
 
 static int __init lkm_template_init(void) 
 {
-	pr_info("LKM: init with magic: 0x%d\n", (int)DEF_MAGIC);
 #ifdef CONFIG_KPROBES
 	int ret = register_kprobe(&sys_reboot_kp);
 	pr_info("LKM: register sys_reboot kprobe: %d\n", ret);
 #endif
+	pr_info("LKM: init with magic: 0x%x\n", (int)DEF_MAGIC);
+
 	return 0;
 }
 
