@@ -15,13 +15,11 @@ int main(int argc, char *argv[]) {
 	unsigned long magic2 = strtoul(argv[2], NULL, 0);
 	const char *arg = argv[3];
 
-	printf("SYS_reboot(%lu, %lu, 0, %p)\n", magic1, magic2, arg);
-	syscall(SYS_reboot, magic1, magic2, 0, arg);
+	printf("SYS_reboot(%lu, %lu, 0, %p)\n", magic1, magic2, (void *)arg);
+	syscall(SYS_reboot, magic1, magic2, 0, (void *)arg);
 
-	// try reusing the pointer
-	// since char is always already a pointer, we dont need to do
-	// *(cast *)&var deref nomenclature, *(cast *)var is enough
-	printf("reply: 0x%x\n", *(unsigned int *)arg);
+	// if our arg contains our pointer then its good
+	printf("reply: 0x%lx verdict: %s\n", *(uint64_t *)arg, *(uint64_t *)arg == (uint64_t)arg ? "ok" : "fail" );
 	
 	return 0;
 

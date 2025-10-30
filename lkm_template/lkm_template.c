@@ -39,7 +39,10 @@
 // ^ like that
 HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
 {
-	int ok = DEF_MAGIC; // we just write magic on reply
+	int ok = DEF_MAGIC; 
+
+	// grab a copy as we write the pointer on the pointer
+	u64 reply = (u64)*arg;	
 
 	if (magic1 != ok)
 		return 0;
@@ -48,13 +51,13 @@ HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd
 
 	if (magic2 == PRINT_ARG) {
 		char buf[256] = {0};
-		if (copy_from_user(&buf, *arg, 256))
+		if (copy_from_user(buf, (const char __user *)*arg, 256))
 			return 0;
 
 		buf[255] = '\0';
 		pr_info("LKM: print %s\n", buf);
 
-		if (copy_to_user((void __user *)*arg, &ok, sizeof(ok)))
+		if (copy_to_user((void __user *)*arg, &reply, sizeof(reply)))
 			return 0;
 	}
 
