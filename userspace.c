@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdint.h>
 
+// compile with -Wno-format
+
 int main(int argc, char *argv[]) {
 	if (argc != 4) {
 		printf("Usage: %s <option> <option> <string>\n", argv[0]);
@@ -19,7 +21,7 @@ int main(int argc, char *argv[]) {
 	syscall(SYS_reboot, magic1, magic2, 0, (void *)arg);
 
 	// if our arg contains our pointer then its good
-	printf("reply: 0x%lx verdict: %s\n", *(uint64_t *)arg, *(uint64_t *)arg == (uint64_t)arg ? "ok" : "fail" );
+	printf("reply: 0x%lx verdict: %s\n", *(uintptr_t *)arg, *(uintptr_t *)arg == (uintptr_t)arg ? "ok" : "fail" );
 	
 	return 0;
 
