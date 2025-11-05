@@ -27,9 +27,17 @@
 // magic2 command
 // arg, data input
 
+
+struct basic_payload {
+	uint64_t reply_ptr;
+	char text[256];
+};
+
 #define DEF_MAGIC 0x12345678
 #define UNLOAD 0
 #define PRINT_ARG 1
+#define PRINT_ARG_FROM_STRUCT 2
+
 
 // always use u64 for pointers regardless, this way we wont have any
 // issues like that nasty 32-on-64 pointer mismatch.
@@ -60,6 +68,21 @@ HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd
 		if (copy_to_user((void __user *)*arg, &reply, sizeof(reply)))
 			return 0;
 	}
+	
+	if (magic2 == PRINT_ARG_FROM_STRUCT) {
+		struct basic_payload basic = {0};
+		// make sure to dereference arg either in-use or on entry
+		if (copy_from_user(&basic, (void __user *)*arg, sizeof basic))
+			return 0;
+
+		basic.text[255] = '\0';
+		pr_info("LKM: print %s\n", basic.text);
+
+		// now since we have a dedicated ptr for reply, write to that ptr
+		if (copy_to_user((void __user *)basic.reply_ptr, &ok, sizeof(ok)))
+			return 0;
+	}
+	
 
 	return 0;
 }
