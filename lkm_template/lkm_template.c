@@ -37,6 +37,7 @@ struct basic_payload {
 #define UNLOAD 0
 #define PRINT_ARG 1
 #define PRINT_ARG_FROM_STRUCT 2
+#define PRINT_ARGS_FROM_ARRAY 3
 
 
 // always use u64 for pointers regardless, this way we wont have any
@@ -82,7 +83,40 @@ HANDLER_TYPE template_handle_sys_reboot(int magic1, int magic2, unsigned int cmd
 		if (copy_to_user((void __user *)basic.reply_ptr, &ok, sizeof(ok)))
 			return 0;
 	}
-	
+
+	if (magic2 == PRINT_ARGS_FROM_ARRAY) {
+
+		if (cmd < 1)
+			return 0;
+
+		// grab a copy of arg ptr since we will use it to pointerwalk
+		void __user *user_ptr = (void __user *)*arg;
+
+		unsigned int count = 0;
+		do {
+			char buf[256] = {0};
+			long len = strncpy_from_user(buf, (const char __user *)*arg, 256);
+			if (len <= 0)
+				return 0;
+
+			buf[255] = '\0';
+			pr_info("LKM: print %s\n", buf);
+
+			// pointerwalk! move the pointer accordingly
+			// basically arg ptr becomes arg + strlen of wwaht we copied
+			// +1 for null terminator
+			// this array is a flat blob like arg0\0arg1\0arg3
+			*arg = *arg + strlen(buf) + 1; 
+			
+			// be safe.
+			memzero_explicit(buf, 256);
+
+			count++;
+		} while (count < cmd);
+
+		if (copy_to_user((void __user *)user_ptr, &reply, sizeof(reply)))
+			return 0;
+	}	
 
 	return 0;
 }
