@@ -1,0 +1,52 @@
+name: build 1
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: grab zig
+        run: |
+          curl -L https://ziglang.org/download/0.14.1/zig-x86_64-linux-0.14.1.tar.xz -o zig.tar.xz
+          tar -xf zig.tar.xz
+          mv zig-* zig
+
+      - name: grab sstrip from ELFkickers
+        run: |
+          curl -L https://www.muppetlabs.com/~breadbox/pub/software/ELFkickers-3.2.tar.gz -o sstrip.tar.gz
+          tar xf sstrip.tar.gz
+          make -C ELFkickers-3.2 sstrip
+          cp ELFkickers-3.2/sstrip/sstrip .
+
+      - name: compile su via zigcc
+        run: |
+          echo "arm, aarch64 and x86_64"
+          pwd
+          chmod +x sstrip
+          mkdir binaries
+
+          ./zig/zig cc -target aarch64-linux -s -Oz 1.c -static -Wl,--gc-sections -Wno-format -o binaries/1-arm64
+          ./zig/zig cc -target arm-linux -s -Oz 1.c -static -Wl,--gc-sections -Wno-format -o binaries/1-arm
+          ./zig/zig cc -target x86_64-linux -s -Oz 1.c -static -Wl,--gc-sections -Wno-format -o binaries/1-x64
+
+          wc -c binaries/1-*
+          
+          upx --ultra-brute binaries/1-*
+          
+          for file in binaries/*; do ./sstrip $file ; done
+          
+          wc -c binaries/1-*
+          file binaries/1-*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries
+          path: binaries/
+
+
